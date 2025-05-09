@@ -4,9 +4,9 @@ import { map, zipWith } from "ramda";
 import { makeEmptySExp, makeSymbolSExp, SExpValue, makeCompoundSExp, valueToString } from './L31-value'
 import { first, second, rest, allT, isEmpty, isNonEmptyList, List, NonEmptyList } from "../shared/list";
 import { isArray, isString, isNumericString, isIdentifier } from "../shared/type-predicates";
-import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
+import { Result, makeOk, makeFailure, bind, mapResult, mapv, isOk } from "../shared/result";
 import { parse as p, isSexpString, isToken, isCompoundSexp } from "../shared/parser";
-import { Sexp, Token , CompoundSexp} from "s-expression";
+import { Sexp, Token } from "s-expression";
 import { reduce } from "ramda";
 
 /*
@@ -262,14 +262,40 @@ export const makeDottedPair = (sexps : Sexp[]): Result<SExpValue> =>
         mapv(parseSExp(sexps[2]), (val2: SExpValue) =>
              makeCompoundSExp(val1, val2)));
 
-export const isDict = (sexps : Sexp[][]) : boolean =>
- reduce((acc: boolean, s: Sexp[]) => acc && isDottedPair(s), true, sexps)   ////CHECK THIS
+export const isDict = (sexps : Sexp[]) : sexps is Sexp[][] =>
+ reduce((acc: boolean, s: Sexp) => acc && isArray(s) && isDottedPair(s), true, sexps)   ////CHECK THIS
 
-export const makeDict = (sexps: Sexp[][]): Result<SExpValue> => ///COMPLETE THIS
-    bind(parseSExp(sexps[0]), (val1: SExpValue) =>
-        mapv(parseSExp(sexps[2]), (val2: SExpValue) =>
-                makeCompoundSexp(val1, val2)));
+export const makeDict = (sexps: Sexp[]): Result<SExpValue> => {
+    // Map each pair to a Result<SExpValue> of a compound SExp (key . value)
+    if (isDict(sexps)) {
+    const pairsResult: Result<SExpValue[]> = mapResult(
+        (pair: Sexp[]) => makeDottedPair(pair),
+        sexps
+    );
+    // If all pairs are successfully parsed, wrap them into a proper list (ending in empty)
+    return mapv(pairsResult, (pairs: SExpValue[]) => {
+        // Create a list (pair1 pair2 ...) represented as nested compound SExps
+        const makeList = (elements: SExpValue[]): SExpValue =>
+            isEmpty(elements) ? makeEmptySExp() :
+            makeCompoundSExp(first(elements as NonEmptyList<SExpValue>), makeList(rest(elements as NonEmptyList<SExpValue>)));
+        return makeList(pairs);
+    });
+    }
+    else{
+        return makeFailure("not good dict");
+    }
+}
 
+// export const makeDict = (sexps: Sexp[][]): Result<SExpValue> =>{ ///COMPLETE THIS
+//     //const keys = map((pair: Sexp[]) => parseSExp(pair[0]).value, sexps);
+//     const keys = map((pair: Sexp[]) => isOk(parseSExp(pair[0]))? parseSExp(pair[0]).value : makeFailure("not good dict"), sexps);
+//     const vals = map((pair: Sexp[]) => parseSExp(pair[2]).value, sexps);
+//     makeCompoundSExp(keys.value, vals.value);
+
+//     bind(parseSExp(sexps[0]), (val1: SExpValue) =>
+//         mapv(parseSExp(sexps[2]), (val2: SExpValue) =>
+//                 makeCompoundSexp(val1, val2)));
+//}
 
 // x is the output of p (sexp parser)
 export const parseSExp = (sexp: Sexp): Result<SExpValue> =>
@@ -280,6 +306,7 @@ export const parseSExp = (sexp: Sexp): Result<SExpValue> =>
     isString(sexp) ? makeOk(makeSymbolSExp(sexp)) :
     sexp.length === 0 ? makeOk(makeEmptySExp()) :
     isDottedPair(sexp) ? makeDottedPair(sexp) :
+    isDict(sexp) ? makeDict(sexp) :
     isNonEmptyList<Sexp>(sexp) ? (
         // fail on (x . y z)
         first(sexp) === '.' ? makeFailure(`Bad dotted sexp: ${format(sexp)}`) : 

@@ -1,10 +1,11 @@
-import { reduce } from "ramda";
-import { PrimOp } from "./L31-ast";
+import { is, reduce } from "ramda";
+import { isDict, PrimOp } from "./L31-ast";
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, CompoundSExp, EmptySExp, Value } from "./L31-value";
 import { List, allT, first, isNonEmptyList, rest } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure } from "../shared/result";
 import { format } from "../shared/format";
+import { get } from "http";
 
 export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "+" ? (allT(isNumber, args) ? makeOk(reduce((x, y) => x + y, 0, args)) : 
@@ -32,6 +33,9 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "boolean?" ? makeOk(typeof (args[0]) === 'boolean') :
     proc.op === "symbol?" ? makeOk(isSymbolSExp(args[0])) :
     proc.op === "string?" ? makeOk(isString(args[0])) :
+    proc.op === "dict" ? makeOk(dictPrim(args)):
+    proc.op === "dict?" ? makeOk(isDictPrim(args[0])):
+    proc.op === "get"? getPrim(args[0], args[1]):
     makeFailure(`Bad primitive op: ${format(proc.op)}`);
 
 const minusPrim = (args: Value[]): Result<number> => {
@@ -89,9 +93,22 @@ const cdrPrim = (v: Value): Result<Value> =>
 const consPrim = (v1: Value, v2: Value): CompoundSExp =>
     makeCompoundSExp(v1, v2);
 
+const dictPrim = (vals: List<Value>): CompoundSExp =>
+    listPrim(vals) as CompoundSExp;
+
 export const listPrim = (vals: List<Value>): EmptySExp | CompoundSExp =>
     isNonEmptyList<Value>(vals) ? makeCompoundSExp(first(vals), listPrim(rest(vals))) :
     makeEmptySExp();
 
 const isPairPrim = (v: Value): boolean =>
     isCompoundSExp(v);
+const isDictPrim = (v: Value): boolean =>
+    isCompoundSExp(v) && isPairPrim(v.val1) && isCompoundSExp(v.val2);
+const getPrim = (dict: Value, key: Value): Result<Value> =>
+    isCompoundSExp(dict)?
+        isCompoundSExp(dict.val1)?
+            (dict.val1.val1 === key ? makeOk(dict.val1.val2) :
+                getPrim(dict.val2, key)) :
+            makeFailure(`get: param is not compound ${format(dict)}`) :
+        makeFailure(`Error: key not found in dictionary ${format(dict)}`);
+    
