@@ -6,7 +6,8 @@ import { first, second, rest, allT, isEmpty, isNonEmptyList, List, NonEmptyList 
 import { isArray, isString, isNumericString, isIdentifier } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
 import { parse as p, isSexpString, isToken, isCompoundSexp } from "../shared/parser";
-import { Sexp, Token } from "s-expression";
+import { Sexp, Token , CompoundSexp} from "s-expression";
+import { reduce } from "ramda";
 
 /*
 ;; =============================================================================
@@ -36,7 +37,7 @@ import { Sexp, Token } from "s-expression";
 ;; <binding>  ::= ( <var> <cexp> )           / Binding(var:VarDecl, val:Cexp)
 ;; <prim-op>  ::= + | - | * | / | < | > | = | not |  and | or | eq? | string=?
 ;;                  | cons | car | cdr | pair? | number? | list 
-;;                  | boolean? | symbol? | string?      ##### L3
+;;                  | boolean? | symbol? | string? | dict | get | dict?      ##### L3
 ;; <num-exp>  ::= a number token
 ;; <bool-exp> ::= #t | #f
 ;; <var-ref>  ::= an identifier token
@@ -207,7 +208,7 @@ export const parseL31Atomic = (token: Token): Result<CExp> =>
 const isPrimitiveOp = (x: string): boolean =>
     ["+", "-", "*", "/", ">", "<", "=", "not", "and", "or",
      "eq?", "string=?", "cons", "car", "cdr", "list", "pair?",
-     "number?", "boolean?", "symbol?", "string?"].includes(x);
+     "number?", "boolean?", "symbol?", "string?","dict", "get", "dict?"].includes(x);
 
 const isSpecialForm = (x: string): boolean =>
     ["if", "lambda", "let", "quote"].includes(x);
@@ -260,6 +261,15 @@ export const makeDottedPair = (sexps : Sexp[]): Result<SExpValue> =>
     bind(parseSExp(sexps[0]), (val1: SExpValue) => 
         mapv(parseSExp(sexps[2]), (val2: SExpValue) =>
              makeCompoundSExp(val1, val2)));
+
+export const isDict = (sexps : Sexp[][]) : boolean =>
+ reduce((acc: boolean, s: Sexp[]) => acc && isDottedPair(s), true, sexps)   ////CHECK THIS
+
+export const makeDict = (sexps: Sexp[][]): Result<SExpValue> => ///COMPLETE THIS
+    bind(parseSExp(sexps[0]), (val1: SExpValue) =>
+        mapv(parseSExp(sexps[2]), (val2: SExpValue) =>
+                makeCompoundSexp(val1, val2)));
+
 
 // x is the output of p (sexp parser)
 export const parseSExp = (sexp: Sexp): Result<SExpValue> =>
