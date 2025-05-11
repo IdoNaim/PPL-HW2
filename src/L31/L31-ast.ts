@@ -67,7 +67,7 @@ export type Binding = {tag: "Binding"; var: VarDecl; val: CExp; }
 export type LetExp = {tag: "LetExp"; bindings: Binding[]; body: CExp[]; }
 // L3
 export type LitExp = {tag: "LitExp"; val: SExpValue; }
-export type DictExp = {tag: "DictExp"; val: SExpValue[]; } 
+// export type DictExp = {tag: "DictExp"; val: SExpValue[]; } 
 
 
 // Type value constructors for disjoint types
@@ -113,7 +113,7 @@ export const isBinding = (x: any): x is Binding => x.tag === "Binding";
 export const isLetExp = (x: any): x is LetExp => x.tag === "LetExp";
 // L3
 export const isLitExp = (x: any): x is LitExp => x.tag === "LitExp";
-export const isDictExp = (x: any): x is LitExp => x.tag === "LitExp" && x.val.tag === "DictExp";
+// export const isDictExp = (x: any): x is LitExp => x.tag === "LitExp" && x.val.tag === "DictExp";
 
 
 // Type predicates for type unions
@@ -122,7 +122,7 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isNumExp(x) || isBoolExp(x) || isStrExp(x) ||
     isPrimOp(x) || isVarRef(x);
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isDictExp(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) ;//|| isDictExp(x);
 export const isCExp = (x: any): x is CExp =>
     isAtomicExp(x) || isCompoundExp(x);
 
