@@ -33,17 +33,21 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "boolean?" ? makeOk(typeof (args[0]) === 'boolean') :
     proc.op === "symbol?" ? makeOk(isSymbolSExp(args[0])) :
     proc.op === "string?" ? makeOk(isString(args[0])) :
-    // proc.op === "dict" ? makeOk(dictPrim(args)):
-    // proc.op === "dict?" ? makeOk(isDictPrim(args[0])):
-    // proc.op === "get"? getPrim(args[0], args[1]):
-    proc.op === "dict" ? dictPrim(args) :
+    proc.op === "dict" ? makeOk(dictPrim(args)):
+    proc.op === "dict?" ? makeOk(isDictPrim(args[0])):
+    proc.op === "get"? getPrim(args):
+    proc.op === "dict" ? makeOk(dictPrim(args)) :
     proc.op === "get" ? getPrim(args) :
     proc.op === "dict?" ? makeOk(isDictPrim(args[0])) :
     makeFailure(`Bad primitive op: ${format(proc.op)}`);
 
-    const dictPrim = (args: Value[]): Result<Value> =>
-    args.length === 1 && isCompoundSExp(args[0]) ? makeOk(args[0]) :
-    makeFailure(`dict expects a single quoted list of pairs: ${format(args)}`);
+    //args = [CompunedSExp,
+    const dictPrim = (args: Value[]): Value =>
+        args[0]
+        
+    // const dictPrim = (args: Value[]): Result<Value> =>
+    // args.length === 1 && isCompoundSExp(args[0]) ? makeOk(args[0]) :
+    // makeFailure(`dict expects a single quoted list of pairs: ${format(args)}`);
 
 const isDictPrim = (v: Value): boolean =>
         isEmptySExp(v) ? true :
