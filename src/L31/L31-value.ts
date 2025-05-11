@@ -21,6 +21,10 @@ export const makeClosure = (params: VarDecl[], body: CExp[]): Closure =>
     ({tag: "Closure", params: params, body: body});
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
 
+export type DictValue = {
+    tag: "DictValue";
+    entries : SExpValue[];
+}
 // ========================================================
 // SExp
 export type CompoundSExp = {
@@ -36,7 +40,7 @@ export type SymbolSExp = {
     val: string;
 }
 
-export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp ;
+export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp | DictValue ;
 export const isSExp = (x: any): x is SExpValue =>
     typeof(x) === 'string' || typeof(x) === 'boolean' || typeof(x) === 'number' ||
     isSymbolSExp(x) || isCompoundSExp(x) || isEmptySExp(x) || isPrimOp(x) || isClosure(x);

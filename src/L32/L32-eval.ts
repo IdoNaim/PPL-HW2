@@ -1,6 +1,6 @@
 // L32-eval.ts
-import { map } from "ramda";
-import { isCExp, isLetExp } from "./L32-ast";
+import { map , zipWith} from "ramda";
+import { isCExp, isLetExp ,DictExp, isDictExp, Binding, } from "./L32-ast";
 import { BoolExp, CExp, Exp, IfExp, LitExp, NumExp,
          PrimOp, ProcExp, Program, StrExp, VarDecl } from "./L32-ast";
 import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLitExp, isNumExp,
@@ -8,15 +8,16 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLitExp, isNumExp,
 import { makeBoolExp, makeLitExp, makeNumExp, makeProcExp, makeStrExp } from "./L32-ast";
 import { parseL32Exp } from "./L32-ast";
 import { applyEnv, makeEmptyEnv, makeEnv, Env } from "./L32-env";
-import { isClosure, makeClosure, Closure, Value } from "./L32-value";
+import { isClosure, makeClosure, Closure, Value, makeCompoundSExp, CompoundSExp, DictValue, SExpValue } from "./L32-value";
 import { first, rest, isEmpty, List, isNonEmptyList } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
-import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
+import { Result, makeOk, makeFailure, bind, mapResult, mapv, isFailure } from "../shared/result";
 import { renameExps, substitute } from "./substitute";
 import { applyPrimitive } from "./evalPrimitive";
 import { parse as p } from "../shared/parser";
 import { Sexp } from "s-expression";
 import { format } from "../shared/format";
+import { isDict, makeDict } from "../L31/L31-ast";
 
 // ========================================================
 // Eval functions
@@ -34,8 +35,24 @@ const L32applicativeEval = (exp: CExp, env: Env): Result<Value> =>
                         bind(mapResult(param => L32applicativeEval(param, env), exp.rands), (rands: Value[]) =>
                             L32applyProcedure(rator, rands, env))) :
     isLetExp(exp) ? makeFailure('"let" not supported (yet)') :
+    isDictExp(exp) ? evalDict(exp, env) :
     exp;
 
+    const evalDict = (exp: DictExp, env: Env): Result<Value> =>{
+        const bindings = exp.entries;
+        const vars = map((b: Binding) => b.var.var, bindings);
+        const valsResult = mapResult((b: Binding) => L32applicativeEval(b.val, env), bindings);
+        const bindingsResult = mapv(valsResult, (vals: SExpValue[]) => zipWith(makeCompoundSExp, vars, vals));
+        if(isFailure(bindingsResult)){
+            return makeFailure(`Error in evalDict: ${format(valsResult)}`);
+        }
+        else{
+            return makeOk(makeDictValue(bindingsResult.value));
+        }
+    }
+
+    const makeDictValue = (entries: CompoundSExp[]): DictValue =>
+        ({tag: "DictValue", entries: entries});
 export const isTrueValue = (x: Value): boolean =>
     ! (x === false);
 
