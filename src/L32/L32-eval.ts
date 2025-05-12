@@ -8,7 +8,7 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLitExp, isNumExp,
 import { makeBoolExp, makeLitExp, makeNumExp, makeProcExp, makeStrExp } from "./L32-ast";
 import { parseL32Exp } from "./L32-ast";
 import { applyEnv, makeEmptyEnv, makeEnv, Env } from "./L32-env";
-import { isClosure, makeClosure, Closure, Value, makeCompoundSExp, CompoundSExp, DictValue, SExpValue } from "./L32-value";
+import { isClosure, makeClosure, Closure, Value, makeCompoundSExp, CompoundSExp, DictValue, SExpValue, isDictValue, isSymbolSExp } from "./L32-value";
 import { first, rest, isEmpty, List, isNonEmptyList } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv, isFailure } from "../shared/result";
@@ -67,7 +67,20 @@ const evalProc = (exp: ProcExp, env: Env): Result<Closure> =>
 const L32applyProcedure = (proc: Value, args: Value[], env: Env): Result<Value> =>
     isPrimOp(proc) ? applyPrimitive(proc, args) :
     isClosure(proc) ? applyClosure(proc, args, env) :
+    isDictValue(proc) ? applyDict(proc, args, env) :
     makeFailure(`Bad procedure ${format(proc)}`);
+
+const applyDict = (proc: DictValue, args: Value[], env: Env): Result<Value> => {
+    const dict = proc.entries;
+    const key = args[0];
+    return searchKey(key, dict);
+}
+const searchKey = (key: Value, dict: CompoundSExp[]): Result<Value> => 
+    isEmpty(dict) ? makeFailure(`Key not found in dictionary: ${format(key)}`) :
+    isSymbolSExp(key) ?
+        dict[0].val1 === key.val ? makeOk(dict[0].val2) : searchKey(key, dict.slice(1)):
+        makeFailure(`Key not a symbol: ${format(key)}`);
+
 
 // Applications are computed by substituting computed
 // values into the body of the closure.

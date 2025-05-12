@@ -25,6 +25,7 @@ export type DictValue = {
     tag: "DictValue";
     entries: CompoundSExp[];
 }
+export const isDictValue = (x: any): x is DictValue => x.tag === "DictValue";
 // ========================================================
 // SExp
 export type CompoundSExp = {
@@ -74,7 +75,6 @@ export const compoundSExpToString = (cs: CompoundSExp, css = compoundSExpToArray
     isArray(css) ? `(${css.join(' ')})` :
     `(${css.s1.join(' ')} . ${css.s2})`
     
-export const isDictValue = (x: any): x is DictValue => x.tag === "DictValue";
 
 export const valueToString = (val: Value): string =>
     isNumber(val) ?  val.toString() :

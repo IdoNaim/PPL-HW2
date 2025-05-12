@@ -9,7 +9,7 @@ import { makeBoolExp, makeLitExp, makeNumExp, makeProcExp, makeStrExp } from "./
 import { parseL31Exp } from "./L31-ast";
 import { applyEnv, makeEmptyEnv, makeEnv, Env } from "./L31-env";
 import { isClosure, makeClosure, Closure, Value } from "./L31-value";
-import { first, rest, isEmpty, List, isNonEmptyList, cons } from '../shared/list';
+import { first, rest, isEmpty, List, isNonEmptyList } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
 import { renameExps, substitute } from "./substitute";
@@ -17,7 +17,6 @@ import { applyPrimitive } from "./evalPrimitive";
 import { parse as p } from "../shared/parser";
 import { Sexp } from "s-expression";
 import { format } from "../shared/format";
-import { isDictExp } from "../L32/L32-ast";
 
 // ========================================================
 // Eval functions
@@ -35,12 +34,8 @@ const L31applicativeEval = (exp: CExp, env: Env): Result<Value> =>
                         bind(mapResult(param => L31applicativeEval(param, env), exp.rands), (rands: Value[]) =>
                             L31applyProcedure(rator, rands, env))) :
     isLetExp(exp) ? makeFailure('"let" not supported (yet)') :
-    isDictExp(exp) ? evalDict(exp, env) :
     exp;
 
-
-    const evalDict = (exp: DictExp, env: Env): Result<Value> =>
-        
 export const isTrueValue = (x: Value): boolean =>
     ! (x === false);
 
