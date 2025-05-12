@@ -183,7 +183,7 @@ const parseDictExp = (params: Sexp[]): Result<DictExp> =>{
     } 
     const vars = map(b => b[0], params);
     const valsResult = mapResult(parseL32CExp, map(second, params));
-    const bindingsResult = mapv(valsResult, (vals: CExp[]) => zipWith(makeBinding, vars, vals));
+    const bindingsResult = mapv(valsResult, (valsResult: CExp[]) => zipWith(makeBinding, vars, valsResult));
     return bind(bindingsResult, (bindings: Binding[]) => 
                 makeOk(makeDictExp(bindings)));
 }
@@ -306,7 +306,6 @@ export const parseSExp = (sexp: Sexp): Result<SExpValue> =>
 
 import { isSymbolSExp, isEmptySExp, isCompoundSExp } from './L32-value';
 import { format } from "../shared/format";
-import { isDict, makeDict } from "../L31/L31-ast";
 
 // Add a quote for symbols, empty and compound sexp - strings and numbers are not quoted.
 const unparseLitExp = (le: LitExp): string =>

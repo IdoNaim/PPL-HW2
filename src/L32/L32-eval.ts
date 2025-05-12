@@ -17,7 +17,6 @@ import { applyPrimitive } from "./evalPrimitive";
 import { parse as p } from "../shared/parser";
 import { Sexp } from "s-expression";
 import { format } from "../shared/format";
-import { isDict, makeDict } from "../L31/L31-ast";
 
 // ========================================================
 // Eval functions

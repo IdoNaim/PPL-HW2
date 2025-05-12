@@ -4,7 +4,6 @@
 import { isPrimOp, CExp, PrimOp, VarDecl } from './L32-ast';
 import { isNumber, isArray, isString } from '../shared/type-predicates';
 import { append, is } from 'ramda';
-import { isDict } from '../L31/L31-ast';
 
 export type Value = SExpValue;
 
