@@ -58,5 +58,6 @@ Signature: L32ToL3(prog)
 Type: Program -> Program
 */
 export const L32toL3 = (prog : Program): Program =>
-    //@TODO
-    makeProgram([]);
+    Dict2App(prog);
+
+    
