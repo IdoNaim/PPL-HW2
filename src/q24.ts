@@ -8,6 +8,8 @@ import {evalSequence}  from './L32/L32-eval';
 import { makeEmptyEnv } from './L32/L32-env';
 import { parse as p, isSexpString, isToken, isCompoundSexp } from "./shared/parser";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv, isOk } from "./shared/result";
+import util from 'util';
+
 
 
 
@@ -57,7 +59,13 @@ Purpose: Transform L32 program to L3
 Signature: L32ToL3(prog)
 Type: Program -> Program
 */
-export const L32toL3 = (prog : Program): Program =>
-    Dict2App(prog);
+export const L32toL3 = (prog : Program): Program =>{
+    console.log(util.inspect(prog, { depth: null, colors: true }));
+    console.log(util.inspect(Dict2App(prog), { depth: null, colors: true }));
+
+    // console.log(Dict2App(prog));
+    return Dict2App(prog);
+}
+
 
     
