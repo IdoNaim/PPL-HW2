@@ -33,7 +33,7 @@ const ExpToJS = (exp: Exp): string =>
         exp.rator.op === "number?" ? `typeof ${ExpToJS(exp.rands[0])} === "number"` :
         exp.rator.op === "boolean?" ? `typeof ${ExpToJS(exp.rands[0])} === "boolean"` :
         exp.rator.op === "eq?" ? `(${ExpToJS(exp.rands[0])} === ${ExpToJS(exp.rands[1])})` :
-        exp.rator.op === "and" ? exp.rands.map(ExpToJS).join(" && ") :
-        exp.rator.op === "or" ? exp.rands.map(ExpToJS).join(" || ") :
+        exp.rator.op === "and" ? `(${exp.rands.map(ExpToJS).join(" && ")})` :
+        exp.rator.op === "or" ? `(${exp.rands.map(ExpToJS).join(" || ")})` :
         exp.rator.op === "not" ? `(!${ExpToJS(exp.rands[0])})` :
         "Not Supported Application"
