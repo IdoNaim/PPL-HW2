@@ -1,6 +1,6 @@
 import { DictExp,  Binding ,unparseL32, parseL32,  makeProgram, Program ,Exp, CExp, makeVarRef, CompoundExp, makeLitExp, parseSExp,  makeDefineExp, makeVarDecl, makeProcExp} from './L32/L32-ast';
 import {makeCompoundSExp, CompoundSExp, isEmptySExp, isSymbolSExp, Value} from './L32/L32-value';
-import {makeAppExp, makeBinding,makeIfExp, makeLetExp, DefineExp } from './L32/L32-ast';
+import {makeAppExp, makeBinding,makeIfExp, makeLetExp, DefineExp , parseL32Exp} from './L32/L32-ast';
 import { isDictExp, isAppExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLitExp, isBinding, isExp, isCExp, isVarRef, isStrExp, isBoolExp, isNumExp } from './L32/L32-ast';
 import {is, map} from "ramda";
 import { first, second, rest, allT, isEmpty, isNonEmptyList, List, NonEmptyList } from "./shared/list";
@@ -69,7 +69,7 @@ const turn2AppDefine = (exp : DefineExp) : DefineExp =>
 const turn2AppCExp = (exp :CExp) :  CExp =>
     isDictExp(exp) ? makeAppExp(makeVarRef("dict"), makeKVlist(exp)) : 
     isAppExp(exp) ? makeAppExp(turn2AppCExp(exp.rator), map(turn2AppCExp, exp.rands)) :
-    // isIfExp(exp) ? makeIfExp(turn2AppCExp(exp.test), turn2AppCExp(exp.then), turn2AppCExp(exp.alt)):
+    isIfExp(exp) ? makeIfExp(turn2AppCExp(exp.test), turn2AppCExp(exp.then), turn2AppCExp(exp.alt)):
     isProcExp(exp) ? makeProcExp(exp.args, map(turn2AppCExp, exp.body)):
     isLetExp(exp) ? makeLetExp(map(turn2AppBinding, exp.bindings), map(turn2AppCExp, exp.body)):
     isLitExp(exp) ? exp
@@ -97,10 +97,11 @@ const makeList = (entries: Binding[]): SExpValue =>
     isNonEmptyList<Binding>(entries) ? makeCompoundSExp(makeCompoundSExp(makeSymbolSExp(entries[0].var.var), getStringVal(unparseL32(entries[0].val))), makeList(entries.slice(1))) 
 : makeEmptySExp();
 
-const getStringVal=(val : string) : SExpValue => {
+export const getStringVal=(val : string) : SExpValue => {
     const sexp = p(val);
     if(isOk(sexp)){
-        const parsed = parseSExp(sexp.value);
+        // const parsed = parseSExp(sexp.value);
+        const parsed = parseL32Exp(sexp.value)
         if(isOk(parsed)){
             return parsed.value;
         }
@@ -127,7 +128,16 @@ export const L32toL3 = (prog : Program): Program =>{
     // console.log(util.inspect(prog, { depth: null, colors: true }));
     // console.log(util.inspect(Dict2App(prog), { depth: null, colors: true }));
 
-    const getpair = parseL32(`(L32 (define getPair 
+const getpair2 = parseL32(`(L32 (define getPair 
+                                    (lambda (d k f) 
+                                            (if (eq? d '())
+                                                    "key not found"
+                                                    (if (eq? (car (car d)) k)
+                                                        (cdr (car d))
+                                                        (f (cdr d) k)
+                                                        )))))`)
+
+const getpair = parseL32(`(L32 (define getPair 
                                     (lambda (x y f) 
                                         (if (= (car (car x)) y)
                                             (cdr (car x))
@@ -137,12 +147,20 @@ const dict = parseL32(`(L32 (define dict
                                     (lambda (x) 
                                         (lambda (y) 
                                             (getPair x y getPair)
-))))`)
-        if(isOk(getpair) && isOk(dict)){
-            const getpairExp = getpair.value.exps[0];
+                                                                ))))`)
+
+// console.log(util.inspect(getpair, { depth: null, colors: true }));
+// console.log(util.inspect(dict, { depth: null, colors: true }));
+        if(isOk(getpair2) && isOk(dict)){
+            const getpair2Exp = getpair2.value.exps[0];
+            // const getpairExp = getpair.value.exps[0];
             const dictExp = dict.value.exps[0];
             const exps = Dict2App(prog).exps
-            return makeProgram([getpairExp, dictExp, ...exps])
+            //console.log(util.inspect(makeProgram([getpairExp, dictExp, ...exps]), { depth: null, colors: true }));
+            //console.log(util.inspect(makeProgram([getpair2Exp, dictExp, ...exps]), { depth: null, colors: true }));
+            return makeProgram([getpair2Exp, dictExp, ...exps])
+
+            // return makeProgram([getpairExp, dictExp, ...exps])
         }
         return prog
     }
