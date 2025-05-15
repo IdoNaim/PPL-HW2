@@ -1,7 +1,7 @@
 import { DictExp,  Binding ,unparseL32, parseL32,  makeProgram, Program ,Exp, CExp, makeVarRef, CompoundExp, makeLitExp, parseSExp,  makeDefineExp, makeVarDecl, makeProcExp} from './L32/L32-ast';
 import {makeCompoundSExp, CompoundSExp, isEmptySExp, isSymbolSExp, Value} from './L32/L32-value';
 import {makeAppExp, makeBinding,makeIfExp, makeLetExp, DefineExp , parseL32Exp} from './L32/L32-ast';
-import { isDictExp, isAppExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLitExp, isBinding, isExp, isCExp, isVarRef, isStrExp, isBoolExp, isNumExp } from './L32/L32-ast';
+import { isDictExp, isAppExp, isDefineExp, isIfExp, isProcExp, isLetExp, isLitExp, isBinding, isExp, isCExp, isVarRef, isStrExp, isBoolExp, isNumExp, isPrimOp } from './L32/L32-ast';
 import {is, map} from "ramda";
 import { first, second, rest, allT, isEmpty, isNonEmptyList, List, NonEmptyList } from "./shared/list";
 import { makeEmptySExp, SExpValue, makeSymbolSExp } from './L32/L32-value';
@@ -73,14 +73,11 @@ const turn2AppCExp = (exp :CExp) :  CExp =>
     isProcExp(exp) ? makeProcExp(exp.args, map(turn2AppCExp, exp.body)):
     isLetExp(exp) ? makeLetExp(map(turn2AppBinding, exp.bindings), map(turn2AppCExp, exp.body)):
     isLitExp(exp) ? exp
-     : isVarRef(exp)
-        ? exp
-    : isNumExp(exp)
-        ? exp
-    : isBoolExp(exp)
-        ? exp
-    : isStrExp(exp)
-        ? exp
+    : isVarRef(exp) ? exp
+    :isPrimOp(exp) ? exp
+    : isNumExp(exp) ? exp
+    : isBoolExp(exp) ? exp
+    : isStrExp(exp) ? exp
     : (() => {
         throw new Error(`Unknown or malformed CExp: ${JSON.stringify(exp)}`);
     })();
@@ -94,14 +91,14 @@ const makeKVlist = (dictExp :DictExp)  :CExp[]=> {
 }
 
 const makeList = (entries: Binding[]): SExpValue =>
-    isNonEmptyList<Binding>(entries) ? makeCompoundSExp(makeCompoundSExp(makeSymbolSExp(entries[0].var.var), getStringVal(unparseL32(entries[0].val))), makeList(entries.slice(1))) 
+    isNonEmptyList<Binding>(entries) ? makeCompoundSExp(makeCompoundSExp(makeSymbolSExp(entries[0].var.var), isLitExp(entries[0].val) ? entries[0].val.val : getStringVal(unparseL32(entries[0].val))), makeList(entries.slice(1))) 
 : makeEmptySExp();
 
 export const getStringVal=(val : string) : SExpValue => {
     const sexp = p(val);
     if(isOk(sexp)){
-        // const parsed = parseSExp(sexp.value);
-        const parsed = parseL32Exp(sexp.value)
+        const parsed = parseSExp(sexp.value);
+        //const parsed = parseL32Exp(sexp.value)
         if(isOk(parsed)){
             return parsed.value;
         }
