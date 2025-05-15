@@ -1,1 +1,2 @@
-console.log(p("(L32 ((dict (a 1) (b 2)) 'a))"))
+ console.log(util.inspect(getpair, { depth: null, colors: true }))
+// console.log(util.inspect(dict, { depth: null, colors: true }))

@@ -1,40 +1,40 @@
 import { parse as p, isSexpString, isToken, isCompoundSexp } from "./src/shared/parser";
 import {  evalL32program } from "./src/L32/L32-eval";
 import { Value ,CompoundSExp} from "./src/L32/L32-value";
-import { Result, bind, isFailure, isOk, makeFailure, makeOk } from "./src/shared/result";
+import { Result, bind, isFailure, isOk, makeFailure, makeOk,  } from "./src/shared/result";
 import { Exp} from "./src/L32/L32-ast";
 import { parseL32, parseL32Exp, Program, isProgram ,unparseL32, isLitExp} from "./src/L32/L32-ast";
-import {turn2App} from "./src/q24";
+import {turn2App, L32toL3, Dict2App} from "./src/q24";
 import util from 'util';
 
-// console.log(p("(d 'b)"))
+const getpair = parseL32(`(L32 (define getPair 
+                                    (lambda (x y f) 
+                                        (if (= (car (car x)) y)
+                                            (cdr (car x))
+                                            (f (cdr x) y)
+                                    ))))`)
+const dict = parseL32(`(L32 (define dict 
+                                    (lambda (x) 
+                                        (lambda (y) 
+                                            (getPair x y getPair)
+))))`)
+// console.log(util.inspect(getpair, { depth: null, colors: true }))
+// console.log(util.inspect(dict, { depth: null, colors: true }))
 
-// const evalP = (x: string): Result<Value> =>
-//     bind(parseL32(x), evalL32program);
-// console.log(p(`(L32 ((dict (a 1) (b 2)) 'a))`))
-// const sexpOfDict = p(`((dict (a 1) (b 2)) 'a)`)
-// console.log(sexpOfDict)
-// const val = isOk(sexpOfDict) ? sexpOfDict.value : "bad"
-// console.log(parseL32Exp(val))
-// console.log(evalP(`(L32 ((dict (a 1) (b 2)) 'a))`))
-// console.log()
-// const val = isOk(evalP(`(L32 ((dict (a 1) (b 2)) 'a))`)) ? evalP(`(L32 ((dict (a 1) (b 2)) 'a))`).value : "bad"
-// "(L32 ((dict (a 1) (b 2)) 'a))"
-console.log(util.inspect(p("(L32 ((dict (a 1) (b 2)) 'a))"), { depth: null, colors: true }));
-console.log(util.inspect(parseL32("(L32 ((dict (a 1) (b 2)) 'a))"), { depth: null, colors: true }));
+const evalP = (x: string): Result<Value> => 
+    bind(parseL32(x), (prog) => 
+        evalL32program(L32toL3(prog)))
+const x = `(L32 ((dict (a 1) (b 2)) 'a))`
+//console.log(util.inspect(evalP(x),{ depth: null, colors: true }) )
+const y = parseL32(x)
 
-//console.log(p("(L32 ((dict (a 1) (b 2)) 'a))"))
-const prog = parseL32(`(L32 (dict (a 1) (b 2)))`)
-const dict = bind(prog, (prog: Program) => isProgram(prog) ? makeOk((prog as Program).exps[0]): makeFailure("not a program") )
-const dictExp = isOk(dict) ? dict.value : "bad"
-const appExp = turn2App(dictExp as Exp)
-// console.log(unparseL32((dictExp as Exp)))
-// console.log(unparseL32(appExp))
+isOk(y) ? console.log(util.inspect(Dict2App(y.value),{ depth: null, colors: true }) ):
+console.log("die")
 
-// const prog2 = parseL32(`(L32 '((a . 1) (b . 2)))`)
-// const lit = isOk(prog2) ? isProgram(prog2.value) ? prog2.value.exps[0] : "bad" : "bad"
-// isLitExp(lit) ? console.log(unparseL32(lit)) : console.log("not a litExp")
-// isLitExp(lit) ? console.log((lit.val as CompoundSExp).val1) : console.log("not a litexp")
+console.log(util.inspect(evalP(x),{ depth: null, colors: true }) )
+
+
+
 
 
 
