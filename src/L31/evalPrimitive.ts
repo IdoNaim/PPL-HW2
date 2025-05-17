@@ -1,11 +1,10 @@
 import { is, reduce } from "ramda";
-import { isDict, PrimOp } from "./L31-ast";
+import { PrimOp } from "./L31-ast";
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, CompoundSExp, EmptySExp, Value } from "./L31-value";
 import { List, allT, first, isNonEmptyList, rest } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure } from "../shared/result";
 import { format } from "../shared/format";
-import { get } from "http";
 
 export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "+" ? (allT(isNumber, args) ? makeOk(reduce((x, y) => x + y, 0, args)) : 
@@ -36,9 +35,6 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "dict" ? makeOk(dictPrim(args)):
     proc.op === "dict?" ? makeOk(isDictPrim(args[0])):
     proc.op === "get"? getPrim(args):
-    proc.op === "dict" ? makeOk(dictPrim(args)) :
-    proc.op === "get" ? getPrim(args) :
-    proc.op === "dict?" ? makeOk(isDictPrim(args[0])) :
     makeFailure(`Bad primitive op: ${format(proc.op)}`);
 
     //args = [CompunedSExp,

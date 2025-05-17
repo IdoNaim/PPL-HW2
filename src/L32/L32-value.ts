@@ -3,7 +3,7 @@
 
 import { isPrimOp, CExp, PrimOp, VarDecl } from './L32-ast';
 import { isNumber, isArray, isString } from '../shared/type-predicates';
-import { append } from 'ramda';
+import { append, is } from 'ramda';
 
 export type Value = SExpValue;
 
@@ -20,7 +20,11 @@ export type Closure = {
 export const makeClosure = (params: VarDecl[], body: CExp[]): Closure =>
     ({tag: "Closure", params: params, body: body});
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
-
+export type DictValue = {
+    tag: "DictValue";
+    entries: CompoundSExp[];
+}
+export const isDictValue = (x: any): x is DictValue => x.tag === "DictValue";
 // ========================================================
 // SExp
 export type CompoundSExp = {
@@ -36,7 +40,7 @@ export type SymbolSExp = {
     val: string;
 }
 
-export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp;
+export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp|DictValue;
 export const isSExp = (x: any): x is SExpValue =>
     typeof(x) === 'string' || typeof(x) === 'boolean' || typeof(x) === 'number' ||
     isSymbolSExp(x) || isCompoundSExp(x) || isEmptySExp(x) || isPrimOp(x) || isClosure(x);
@@ -69,6 +73,7 @@ export const compoundSExpToArray = (cs: CompoundSExp, res: string[]): string[] |
 export const compoundSExpToString = (cs: CompoundSExp, css = compoundSExpToArray(cs, [])): string => 
     isArray(css) ? `(${css.join(' ')})` :
     `(${css.s1.join(' ')} . ${css.s2})`
+    
 
 export const valueToString = (val: Value): string =>
     isNumber(val) ?  val.toString() :
@@ -80,4 +85,5 @@ export const valueToString = (val: Value): string =>
     isSymbolSExp(val) ? val.val :
     isEmptySExp(val) ? "'()" :
     isCompoundSExp(val) ? compoundSExpToString(val) :
+    isDictValue(val) ? `#<dict ${val.entries.map((e: CompoundSExp) => valueToString(e)).join(' ')}>` :
     val;
