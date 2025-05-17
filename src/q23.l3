@@ -1,0 +1,73 @@
+(define make-error
+  (lambda (msg)
+    (cons 'error msg)))
+
+(define is-error?
+  (lambda (v)
+    (if (pair? v)
+        (eq? (car v) 'error)
+        #f)))
+
+(define valid-pairs-list?
+  (lambda (lst)
+    (if (eq? lst '())
+        #t
+        (if (and (pair? (car lst))
+                 (symbol? (car (car lst))))
+            (valid-pairs-list? (cdr lst))
+            #f))))
+
+(define has-duplicate-keys?
+  (lambda (lst)
+    (if (eq? lst '())
+        #f 
+        (if (key-in? (car (car lst)) (cdr lst))
+            #t
+            (has-duplicate-keys? (cdr lst))))))
+
+(define key-in?
+  (lambda (key lst)
+    (if (eq? lst '())
+        #f 
+        (if (eq? key (car (car lst)))
+            #t  
+            (key-in? key (cdr lst))))))
+
+(define dict?
+  (lambda (v)
+    (if (and (valid-pairs-list? v)
+             (not (has-duplicate-keys? v)))
+        #t
+        #f)))
+
+(define dict
+  (lambda (x)
+    (if (dict? x)
+        x
+        (make-error "not a dict"))))
+
+(define get
+  (lambda (d k)
+    (if (dict? d)
+        (if (eq? d '())
+            (make-error "key not found")
+            (if (eq? (car (car d)) k)
+                (cdr (car d))
+                (get (cdr d) k)))
+        (make-error "not a dict"))))
+
+(define get
+  (lambda (d k)
+    (if (dict? d)
+        (if (eq? d '())
+            (make-error "key not found")
+            (if (eq? (car (car d)) k)
+                (cdr (car d))
+                (get (cdr d) k)))
+        (make-error "not a dict"))))
+
+(define bind
+  (lambda (v f)
+    (if (is-error? v)
+        v
+        (f v))))
