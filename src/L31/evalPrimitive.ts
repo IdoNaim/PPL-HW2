@@ -1,9 +1,9 @@
 import { is, reduce } from "ramda";
 import { PrimOp } from "./L31-ast";
-import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, CompoundSExp, EmptySExp, Value } from "./L31-value";
+import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, CompoundSExp, EmptySExp, Value, SExpValue } from "./L31-value";
 import { List, allT, first, isNonEmptyList, rest } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
-import { Result, makeOk, makeFailure } from "../shared/result";
+import { Result, makeOk, makeFailure, isOk,bind } from "../shared/result";
 import { format } from "../shared/format";
 
 export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
@@ -32,26 +32,52 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     proc.op === "boolean?" ? makeOk(typeof (args[0]) === 'boolean') :
     proc.op === "symbol?" ? makeOk(isSymbolSExp(args[0])) :
     proc.op === "string?" ? makeOk(isString(args[0])) :
-    proc.op === "dict" ? makeOk(dictPrim(args)):
+    proc.op === "dict" ? dictPrim(args):
     proc.op === "dict?" ? makeOk(isDictPrim(args[0])):
     proc.op === "get"? getPrim(args):
     makeFailure(`Bad primitive op: ${format(proc.op)}`);
 
     //args = [CompunedSExp,
-    const dictPrim = (args: Value[]): Value =>
-        args[0]
+    export const dictPrim = (args: Value[]): Result<Value> =>
+        isDictPrim(args[0])? makeOk(args[0]) : makeFailure("argument isnt a dictionary")
         
     // const dictPrim = (args: Value[]): Result<Value> =>
     // args.length === 1 && isCompoundSExp(args[0]) ? makeOk(args[0]) :
     // makeFailure(`dict expects a single quoted list of pairs: ${format(args)}`);
 
-const isDictPrim = (v: Value): boolean =>
-        isEmptySExp(v) ? true :
-        isCompoundSExp(v) && isCompoundSExp(v.val1) && isDictPrim(v.val2);
-        
-const getPrim = (args: Value[]): Result<Value> =>
+export const isDictPrim = (v: Value): boolean =>{
+        const dupeResult = hasDuplicateKeys(v)
+        if (isOk(dupeResult)){
+            return !dupeResult.value && validPairsList(v)
+        }
+        return false
+}
+
+export const validPairsList = (v : Value) : boolean =>
+    isEmptySExp(v) ? true :
+    isCompoundSExp(v) && isCompoundSExp(v.val1) && validPairsList(v.val2);
+
+export const hasDuplicateKeys = (v : Value) : Result<boolean> =>
+    isEmptySExp(v) ? makeOk(false):
+    isCompoundSExp(v) ? 
+        isCompoundSExp(v.val1) ? 
+            bind(iskeyIn(v.val1.val1, v.val2), (found: boolean) =>
+                found ? makeOk(true) : hasDuplicateKeys(v.val2))
+        :makeFailure("not valid pairs list")
+    : makeFailure("not valid pairs list")
+
+export const iskeyIn = (key : SExpValue,v :Value) : Result<boolean> =>
+    isEmptySExp(v)  ? makeOk(false) :
+    isCompoundSExp(v) ? 
+        isCompoundSExp(v.val1)? 
+            eqPrim([key, v.val1.val1]) ? makeOk(true) : iskeyIn(key, v.val2)
+        :makeFailure("not valid pairs list")
+    : makeFailure("not valid pairs list")
+
+export const getPrim = (args: Value[]): Result<Value> =>
             args.length !== 2 ? makeFailure("get expects exactly 2 arguments") :
             !isCompoundSExp(args[0]) ? makeFailure("First arg must be a dictionary") :
+            !isDictPrim(args[0]) ? makeFailure("First arg must be a dictionary") :
             !isSymbolSExp(args[1]) ? makeFailure("Second arg must be a symbol key") :
             getFromDict(args[0], args[1]);
         
