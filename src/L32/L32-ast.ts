@@ -178,15 +178,40 @@ export const parseL32SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     makeFailure("Never");
 //params[0] = [a, 1]
 const parseDictExp = (params: Sexp[]): Result<DictExp> =>{
+    if(hasDuplicateKey(params)) {
+        return makeFailure("dictionary can't have duplicate keys")
+    }
+
     if(!isGoodBindings(params)){
         return makeFailure('Malformed bindings in "dict" expression');
-    } 
+    }
+
     const vars = map(b => b[0], params);
     const valsResult = mapResult(parseL32CExp, map(second, params));
     const bindingsResult = mapv(valsResult, (valsResult: CExp[]) => zipWith(makeBinding, vars, valsResult));
     return bind(bindingsResult, (bindings: Binding[]) => 
                 makeOk(makeDictExp(bindings)));
 }
+
+const hasDuplicateKey = (params: Sexp[]): boolean => {
+    if (isGoodBindings(params) && isNonEmptyList(params)) {
+        for (let i = 0; i < params.length; i++) {
+            const pair = params[i];
+            if (isArray(pair) && typeof pair[0] === 'string') {
+                const key = pair[0];
+                const restBindings = params.slice(i + 1);
+                if (isKeyIn(key, restBindings)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+};
+ 
+const isKeyIn = (key: string, dict: [string, Sexp][]): boolean =>
+    dict.some(pair => isArray(pair) && pair.length === 2 && pair[0] === key);
+
     
 
 const checkBindings = (params: Sexp[]): boolean =>

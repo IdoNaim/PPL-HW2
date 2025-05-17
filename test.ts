@@ -57,15 +57,14 @@ import { dictPrim, hasDuplicateKeys, isDictPrim, validPairsList } from "./src/L3
 //  console.log(p(unparseL32(makeLitExp(makeSymbolSExp("red")))))
 
 
-const x = `(L31 (get (dict '((a . 1) (b . 2))) 'a))`
-const y = parseL31(x);
-// console.log(util.inspect(y, {depth: null, colors: true}))
-const dict = makeCompoundSExp(makeCompoundSExp(makeSymbolSExp("a"), 1), makeCompoundSExp(makeCompoundSExp(makeSymbolSExp("b"), 2),makeEmptySExp()))
-// const lit = makeLitExp(dict)
-console.log(dictPrim([dict]));
+// const x = `(L31 (get (dict '((a . 1) (b . 2))) 'a))`
+// const y = parseL31(x);
+// // console.log(util.inspect(y, {depth: null, colors: true}))
+// const dict = makeCompoundSExp(makeCompoundSExp(makeSymbolSExp("a"), 1), makeCompoundSExp(makeCompoundSExp(makeSymbolSExp("b"), 2),makeEmptySExp()))
+// // const lit = makeLitExp(dict)
+// console.log(dictPrim([dict]));
 
-
-
+ console.log(util.inspect(p(`(L32 ((dict (a 1) (b 2)) 'a))`), {depth: null, colors: true}))
 
 
 
